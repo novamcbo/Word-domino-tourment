@@ -7,7 +7,8 @@ function tile(t){return `${half(t[0])}<span class="divider"></span>${half(t[1])}
 function fitChain(){
  const board=$('chain');if(!s)return;
  const width=board.clientWidth<260?192:288;
- board.innerHTML=snakeSVG(s.chain,width);
+ const svg=snakeSVG(s.chain,width);
+ board.innerHTML=`<img class="snake-board" alt="Cadena de dominó: ${s.chain.map(t=>t.join('–')).join(', ')}" src="data:image/svg+xml,${encodeURIComponent(svg)}">`;
  $('scrollNote').hidden=true;
 }
 window.addEventListener('resize',fitChain);
