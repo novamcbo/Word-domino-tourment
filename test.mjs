@@ -1,0 +1,3 @@
+import assert from 'node:assert/strict';import {create,options,play,pass,best} from './dist/engine.mjs';
+for(const mode of ['teams','solo'])for(let n=0;n<500;n++){const s=create(mode);assert.equal(new Set(s.hands.flat().map(t=>t.join(','))).size,28);let steps=0;while(!s.over){const m=best(s);if(m)assert.ok(play(s,m));else assert.ok(pass(s));assert.equal(s.hands.flat().length+s.chain.length,28);for(let i=1;i<s.chain.length;i++)assert.equal(s.chain[i-1][1],s.chain[i][0]);assert.ok(++steps<120);}assert.ok(s.result);assert.ok(s.scores.every(n=>n>=0));}
+const s=create();assert.equal(pass(s),false);assert.equal(play(s,{i:99,side:'right'}),false);console.log('PASS: 1000 complete games, legal chains, tile conservation, valid scores and invalid move guards.');
