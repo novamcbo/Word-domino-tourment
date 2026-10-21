@@ -18,6 +18,8 @@ Con Node.js 20 o superior:
 
 ```sh
 node test.mjs
+node test-blocked.mjs
+node test-layout.mjs
 ```
 
 Simula 1.000 manos y comprueba conservación de las 28 fichas, conexiones válidas, finalización y rechazo de jugadas inválidas.
@@ -31,7 +33,7 @@ Simula 1.000 manos y comprueba conservación de las 28 fichas, conexiones válid
 
 ## Reglas de esta edición
 
-7 fichas por jugador, sin pozo. Abre el 6-6 en cada mano. Se pasa solo sin jugadas. Gana quien vacía su mano. Por parejas se suman los puntos restantes de los rivales; en individual, los de todos los demás. Tras cuatro pases gana la menor suma por equipo o jugador. Un empate no puntúa. Estas reglas son explícitas de esta edición, no una implementación certificada de una variante nacional.
+7 fichas por jugador, sin pozo. Abre el 6-6 en cada mano. El pase es automático cuando el jugador no tiene jugadas. Gana quien vacía su mano. Por parejas se suman los puntos restantes de los rivales; en individual, los de todos los demás. Cuando nadie tiene una jugada válida, se declara tranca automáticamente y gana la menor suma por equipo o jugador. Un empate no puntúa. Estas reglas son explícitas de esta edición, no una implementación certificada de una variante nacional.
 
 ## Límites actuales
 

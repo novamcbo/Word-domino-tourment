@@ -1,5 +1,5 @@
 import {snakeSVG} from './layout.mjs';
-import {create,options,play,pass,best} from './engine.mjs';
+import {create,options,play,pass,best,settleBlocked} from './engine.mjs';
 const $=id=>document.getElementById(id),names=['Tú','Leo','Ana','Nico'];let s,timer,selected=null;
 const dots={0:[],1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 function half(n){return `<span class="half">${Array.from({length:9},(_,i)=>`<i class="${dots[n].includes(i)?'pip':''}"></i>`).join('')}</span>`;}
@@ -14,16 +14,39 @@ function fitChain(){
 window.addEventListener('resize',fitChain);
 function save(){try{localStorage.setItem('domino-club-v1',JSON.stringify(s));}catch{}}
 function start(fresh=true){clearTimeout(timer);selected=null;$('choice').hidden=true;$('hint').textContent='';s=create(fresh?$('mode').value:s.mode,fresh?Number($('target').value):s.target,fresh?[0,0,0,0]:s.scores,fresh?1:s.round+1);render();schedule();}
-function render(){save();$('round').textContent=`MANO ${s.round}`;$('handcount').textContent=`${s.hands[0].length} en mano`;$('status').textContent=s.over?'Mano terminada':s.turn===0?(options(s).length?'Tu turno · Elige una ficha':'Sin jugadas · Puedes pasar'):`${names[s.turn]} está pensando…`;
+function render(){settleBlocked(s);save();$('round').textContent=`MANO ${s.round}`;$('handcount').textContent=`${s.hands[0].length} en mano`;$('status').textContent=s.over?(s.result.blocked?'¡Tranca! · Mano terminada':'¡Dominó! · Mano terminada'):s.turn===0?(options(s).length?'Tu turno · Elige una ficha':'Sin jugadas · Pase automático'):`${names[s.turn]} está pensando…`;
 ['south','east','north','west'].forEach((id,p)=>{$(id).className=`player ${id} ${s.turn===p&&!s.over?'active':''}`;$(id).innerHTML=`<div class="avatar">${p===0?'T':names[p][0]}</div><div>${names[p]}${s.mode==='teams'&&p===2?' · Tu pareja':''}</div><small>${s.hands[p].length} fichas${p!==0?' · Bot':''}</small>${p!==0?`<div class="backs">${s.hands[p].map(()=>'<i class="back"></i>').join('')}</div>`:''}`;});
 fitChain();$('ends').textContent=s.chain.length?`EXTREMOS: ${s.chain[0][0]} (A) · ${s.chain.at(-1)[1]} (B)`:'Abre quien tenga el doble seis';
 const valid=options(s);$('hand').innerHTML='';s.hands[0].forEach((t,i)=>{const btn=document.createElement('button');const can=s.turn===0&&valid.some(o=>o.i===i);btn.className=`tile ${can?'playable':''}`;btn.disabled=!can;btn.setAttribute('aria-label',`Jugar ${t[0]}-${t[1]}`);btn.innerHTML=tile(t);btn.onclick=()=>choose(i);$('hand').append(btn);});
-$('passBtn').disabled=s.over||s.turn!==0||valid.length>0;$('hintBtn').disabled=s.over||s.turn!==0||!valid.length;
+$('hintBtn').disabled=s.over||s.turn!==0||!valid.length;
 const labels=s.mode==='teams'?['Tú + Ana','Leo + Nico']:names;$('scoreboard').innerHTML=labels.map((n,i)=>`<div class="scoreline ${i===0?'mine':''}"><div>${n}<small>${s.mode==='teams'?(i===0?'Tu equipo':'Equipo rival'):(i===0?'Tú':'Bot')}</small></div><b>${s.scores[i]}</b></div>`).join('');$('progress').style.width=Math.min(100,s.scores[0]/s.target*100)+'%';$('targetLabel').textContent=`Partida a ${s.target} puntos`;$('history').innerHTML=s.log.length?s.log.slice(0,5).map(l=>`<div class="logline"><span>${names[l.p]}</span><b>${l.text}</b></div>`).join(''):'<p class="muted">Se repartieron las fichas.<br>Que empiece la buena mano.</p>';
 if(s.over)showResult();}
 function choose(i){const opts=options(s).filter(o=>o.i===i);$('hint').textContent='';if(opts.length===1){act(opts[0]);return;}selected=i;$('choice').hidden=false;$('choice').innerHTML=`¿Dónde colocas ${s.hands[0][i].join('–')}? <button class="secondary" id="leftBtn">Extremo A (${s.chain[0][0]})</button><button class="secondary" id="rightBtn">Extremo B (${s.chain.at(-1)[1]})</button>`;$('leftBtn').onclick=()=>act({i:selected,side:'left'});$('rightBtn').onclick=()=>act({i:selected,side:'right'});}
 function act(move){if(s.turn!==0||s.over)return;if(play(s,move)){selected=null;$('choice').hidden=true;render();schedule();}}
-function schedule(){clearTimeout(timer);if(!s.over&&s.turn!==0)timer=setTimeout(()=>{const m=best(s);m?play(s,m):pass(s);render();schedule();},1000);}
-function showResult(){const r=s.result;const winner=r.winner===null?'Empate':s.mode==='teams'?(r.winner===0?'Tu equipo':'Leo y Nico'):names[r.winner];$('resultEyebrow').textContent=r.match?'PARTIDA COMPLETADA':r.blocked?'¡TRANCA!':'¡DOMINÓ!';$('resultTitle').textContent=r.winner===null?'Una mano muy pareja.':`${winner}${r.winner===0&&s.mode==='solo'?' ganas':' gana'}${r.match?' la partida':''}.`;$('resultText').textContent=r.winner===null?'Mismos puntos. Nadie suma; vamos a otra mano.':`${r.award} puntos al marcador. ${r.blocked?'Se decidió por la menor suma de puntos restantes.':'Se jugaron todas las fichas de una mano.'}`;$('resultHands').innerHTML=r.points.map((n,i)=>`<div class="resultline"><span>${names[i]} · ${s.hands[i].map(t=>t.join('–')).join(', ')||'Sin fichas'}</span><b>${n} pts</b></div>`).join('');$('nextBtn').textContent=r.match?'Nueva partida →':'Siguiente mano →';if(!$('result').open)$('result').showModal();}
-$('passBtn').onclick=()=>{if(s.turn===0&&pass(s)){render();schedule();}};$('hintBtn').onclick=()=>{const m=best(s);if(!m)return;const t=s.hands[0][m.i];$('hint').textContent=`Prueba ${t.join('–')}: descarga puntos y prioriza dobles. Es una sugerencia, no una jugada garantizada.`;[...$('hand').children].forEach((e,i)=>e.classList.toggle('suggested',i===m.i));};$('rulesBtn').onclick=()=>$('rules').showModal();document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());$('newBtn').onclick=()=>$('confirm').showModal();$('confirmNew').onclick=()=>{$('confirm').close();start();};$('nextBtn').onclick=()=>{const fresh=s.result.match;$('result').close();start(fresh);};$('result').addEventListener('cancel',e=>e.preventDefault());
+function schedule(){
+ clearTimeout(timer);
+ if(s.over)return;
+ if(s.turn===0&&options(s).length)return;
+ timer=setTimeout(()=>{
+  if(s.over)return;
+  if(settleBlocked(s)){render();return;}
+  if(s.turn===0){pass(s);}else{const m=best(s);m?play(s,m):pass(s);}
+  render();schedule();
+ },1000);
+}
+function showResult(){
+ clearTimeout(timer);$('choice').hidden=true;
+ const r=s.result,teamTotals=[r.points[0]+r.points[2],r.points[1]+r.points[3]];
+ const winner=r.winner===null?'Empate':s.mode==='teams'?(r.winner===0?'Tú y Ana':'Leo y Nico'):names[r.winner];
+ $('resultEyebrow').textContent=r.blocked?'¡JUEGO TRANCADO!':'¡DOMINÓ!';
+ $('resultTitle').textContent=r.winner===null?'Empate en pintas':s.mode==='teams'?`Ganan ${winner}`:r.winner===0?'¡Ganaste la mano!':`Gana ${winner}`;
+ $('resultText').textContent=r.winner===null?'Nadie suma puntos. La siguiente mano conserva el marcador.':`${winner} ${s.mode==='teams'?'suman':r.winner===0?'sumas':'suma'} ${r.award} puntos al marcador. ${r.blocked?'Ningún jugador puede colocar una ficha. Gana quien tiene menos pintas restantes.':'La mano terminó al jugar la última ficha.'}${r.match?' Meta alcanzada: partida terminada.':''}`;
+ $('resultTeams').innerHTML=s.mode==='teams'?teamTotals.map((total,i)=>`<div class="team-result ${r.winner===i?'winning-team':''}"><span>${i===0?'Tú + Ana':'Leo + Nico'}<small>${r.winner===i?'Equipo ganador':r.winner===null?'Empate':'Equipo rival'}</small></span><strong>${total}<small>pintas restantes</small></strong></div>`).join(''):'';
+ $('resultAward').textContent=r.winner===null?'Sin puntos adjudicados':`+${r.award} puntos para ${winner}`;
+ $('resultHands').innerHTML=r.points.map((n,i)=>`<div class="resultline"><span><b>${names[i]}</b><small>${s.hands[i].map(t=>t.join('–')).join(' · ')||'Sin fichas'}</small></span><b>${n} pintas</b></div>`).join('');
+ $('resultScore').textContent=s.mode==='teams'?`Marcador: Tú + Ana ${s.scores[0]} — ${s.scores[1]} Leo + Nico`:`Marcador: ${names.map((n,i)=>`${n} ${s.scores[i]}`).join(' · ')}`;
+ $('nextBtn').textContent=r.match?'Nueva partida →':'Siguiente mano →';
+ if(!$('result').open)$('result').showModal();
+}
+$('hintBtn').onclick=()=>{const m=best(s);if(!m)return;const t=s.hands[0][m.i];$('hint').textContent=`Prueba ${t.join('–')}: descarga puntos y prioriza dobles. Es una sugerencia, no una jugada garantizada.`;[...$('hand').children].forEach((e,i)=>e.classList.toggle('suggested',i===m.i));};$('rulesBtn').onclick=()=>$('rules').showModal();document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());$('newBtn').onclick=()=>$('confirm').showModal();$('confirmNew').onclick=()=>{$('confirm').close();start();};$('nextBtn').onclick=()=>{const fresh=s.result.match;$('result').close();start(fresh);};$('result').addEventListener('cancel',e=>e.preventDefault());
 try{const stored=JSON.parse(localStorage.getItem('domino-club-v1'));if(stored&&Array.isArray(stored.hands)&&stored.hands.length===4&&['teams','solo'].includes(stored.mode))s=stored;}catch{}if(s){$('mode').value=s.mode;$('target').value=s.target;render();schedule();}else start();
