@@ -3,7 +3,14 @@ const $=id=>document.getElementById(id),names=['Tú','Leo','Ana','Nico'];let s,t
 const dots={0:[],1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 function half(n){return `<span class="half">${Array.from({length:9},(_,i)=>`<i class="${dots[n].includes(i)?'pip':''}"></i>`).join('')}</span>`;}
 function tile(t){return `${half(t[0])}<span class="divider"></span>${half(t[1])}`;}
-function fitChain(){const board=$('chain'),track=board.firstElementChild;if(!track)return;const overflowing=track.scrollWidth>board.clientWidth;board.classList.toggle('overflowing',overflowing);$('scrollNote').hidden=!overflowing;}
+function fitChain(){
+ const board=$('chain'),track=board.firstElementChild;if(!track)return;
+ track.style.transform='none';
+ const available=Math.max(0,board.clientWidth-24);
+ const scale=Math.min(1,available/Math.max(1,track.scrollWidth));
+ track.style.transform=`translate(-50%, -50%) scale(${scale})`;
+ $('scrollNote').hidden=true;
+}
 window.addEventListener('resize',fitChain);
 function save(){try{localStorage.setItem('domino-club-v1',JSON.stringify(s));}catch{}}
 function start(fresh=true){clearTimeout(timer);selected=null;$('choice').hidden=true;$('hint').textContent='';s=create(fresh?$('mode').value:s.mode,fresh?Number($('target').value):s.target,fresh?[0,0,0,0]:s.scores,fresh?1:s.round+1);render();schedule();}

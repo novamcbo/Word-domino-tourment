@@ -19,3 +19,22 @@
 .hand .tile:disabled{opacity:1;background:#eeeade;color:#68766b;border-color:#d1d0c4}
 .hand .tile.playable{background:#fff9e8;color:#153c33;box-shadow:0 3px 0 #b7a66b,0 0 0 2px #d8b96b33}
 @media(max-width:760px){.felt{height:380px}.boardarea{inset:118px 10px 100px}.west,.east{top:16px;min-width:64px}.west{left:5px}.east{right:5px}.north{top:16px}.backs{gap:2px}.back{width:6px;height:15px}.chain .tile{height:30px;padding:3px}.chain .half{width:22px;height:22px}.chain .pip{width:5px;height:5px}.chain .divider{height:22px}.chain .tile.double{height:56px;width:30px}.chain .tile.double .divider{width:22px;height:1px}.hand{gap:6px}.ends{font-size:9px}.south{bottom:15px}}
+
+/* Keep all tiles within a padded viewport, with opponents in their seats. */
+.layout,.game,.handpanel{min-width:0}
+.chain{position:relative;display:block;overflow:hidden;height:88px;min-height:88px;padding:12px;width:100%;box-sizing:border-box;touch-action:auto}
+.chain-track{position:absolute;left:50%;top:50%;min-width:0;width:max-content;transform-origin:center center;justify-content:flex-start;padding:4px}
+.boardarea{inset:100px 94px 78px}
+.hand{padding:6px 8px;flex-wrap:wrap;gap:8px}
+@media(max-width:760px){
+ .felt{height:410px;margin:0 10px}
+ .west,.east{top:50%;transform:translateY(-50%);width:58px;min-width:0}
+ .west{left:10px}.east{right:10px}
+ .north{top:20px}.south{bottom:20px}
+ .west .backs,.east .backs{max-width:48px;flex-wrap:wrap;margin-left:auto;margin-right:auto;gap:2px}
+ .west small,.east small{font-size:8px}
+ .boardarea{inset:115px 72px 90px}
+ .chain{height:80px;min-height:80px;padding:12px}
+ .ends{font-size:8px;line-height:1.8;max-width:100%;overflow-wrap:anywhere}
+ .handpanel{padding:18px 14px}.hand{gap:7px;padding:8px 4px}
+}
